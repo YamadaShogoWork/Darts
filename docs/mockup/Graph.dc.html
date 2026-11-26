@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>グラフ</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}
+a:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
+</style>
+</helmet>
+<div style="width:412px;height:915px;box-sizing:border-box;background:#0f1411;color:#eef3ef;font-family:'Noto Sans JP',system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden">
+
+<div style="flex:1;min-height:0;padding:28px 20px 0;display:flex;flex-direction:column;gap:16px">
+
+<div style="display:flex;align-items:center;justify-content:space-between;height:36px">
+<h1 style="margin:0;font-size:22px;font-weight:900">グラフ</h1>
+<span style="height:32px;box-sizing:border-box;padding:0 12px;border-radius:16px;border:1px solid #2b382f;background:#18201b;font-size:13px;display:flex;align-items:center">クリケット10マーク</span>
+</div>
+
+<div style="display:flex;gap:8px" role="group" aria-label="表示期間">
+<span style="flex:1;height:40px;border-radius:20px;border:1px solid #2b382f;background:#18201b;color:#9db0a4;font-size:14px;display:flex;align-items:center;justify-content:center">7日</span>
+<span style="flex:1;height:40px;border-radius:20px;border:1px solid #2b382f;background:#18201b;color:#9db0a4;font-size:14px;display:flex;align-items:center;justify-content:center">30日</span>
+<span aria-current="true" style="flex:1;height:40px;border-radius:20px;background:#3ddc84;color:#06210f;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center">全期間</span>
+</div>
+
+<section style="background:#18201b;border:1px solid #2b382f;border-radius:20px;padding:16px">
+<div style="display:flex;justify-content:space-between;align-items:baseline">
+<span style="font-size:15px;font-weight:700">日ごとの平均本数</span>
+<span role="group" aria-label="表示する指標" style="display:flex;gap:4px"><span aria-current="true" style="height:28px;box-sizing:border-box;padding:0 12px;border-radius:14px;background:#3ddc84;color:#06210f;font-size:12px;font-weight:700;display:flex;align-items:center">本数</span><span style="height:28px;box-sizing:border-box;padding:0 12px;border-radius:14px;border:1px solid #2b382f;color:#9db0a4;font-size:12px;display:flex;align-items:center">MPR</span></span>
+</div>
+<div style="display:flex;gap:16px;margin-top:8px;font-size:12px;color:#9db0a4">
+<span style="display:flex;align-items:center;gap:6px"><svg width="22" height="10" viewBox="0 0 22 10" aria-hidden="true"><line x1="0" y1="5" x2="22" y2="5" stroke="#3ddc84" stroke-width="2"/><circle cx="11" cy="5" r="3" fill="#3ddc84"/></svg>日ごとの平均</span>
+<span style="display:flex;align-items:center;gap:6px"><svg width="22" height="10" viewBox="0 0 22 10" aria-hidden="true"><line x1="0" y1="5" x2="22" y2="5" stroke="#ffd166" stroke-width="4" stroke-linecap="round"/></svg>7日移動平均</span>
+</div>
+<svg viewBox="0 0 364 190" width="100%" role="img" aria-label="日ごとの平均合計本数。11/13の64本から11/26の49本まで減っている。7日移動平均も60本から53本に下がっている" style="display:block;margin-top:8px">
+<g stroke="#2b382f" stroke-width="1">
+<line x1="36" y1="10" x2="356" y2="10"/>
+<line x1="36" y1="56.7" x2="356" y2="56.7"/>
+<line x1="36" y1="103.3" x2="356" y2="103.3"/>
+<line x1="36" y1="150" x2="356" y2="150"/>
+</g>
+<g fill="#9db0a4" font-size="11" text-anchor="end">
+<text x="30" y="14">70</text><text x="30" y="60.7">60</text><text x="30" y="107.3">50</text><text x="30" y="154">40</text>
+</g>
+<polyline points="36,38 60.6,52 85.2,42.7 109.8,66 134.5,56.7 159.1,70.7 183.7,61.3 208.3,80 232.9,75.3 257.5,89.3 282.2,84.7 306.8,98.7 331.4,94 356,108" fill="none" stroke="#3ddc84" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<g fill="#3ddc84">
+<circle cx="36" cy="38" r="3"/><circle cx="60.6" cy="52" r="3"/><circle cx="85.2" cy="42.7" r="3"/><circle cx="109.8" cy="66" r="3"/><circle cx="134.5" cy="56.7" r="3"/><circle cx="159.1" cy="70.7" r="3"/><circle cx="183.7" cy="61.3" r="3"/><circle cx="208.3" cy="80" r="3"/><circle cx="232.9" cy="75.3" r="3"/><circle cx="257.5" cy="89.3" r="3"/><circle cx="282.2" cy="84.7" r="3"/><circle cx="306.8" cy="98.7" r="3"/><circle cx="331.4" cy="94" r="3"/><circle cx="356" cy="108" r="5"/>
+</g>
+<polyline points="183.7,55.3 208.3,61.3 232.9,64.6 257.5,71.1 282.2,73.9 306.8,80 331.4,83.3 356,89.8" fill="none" stroke="#ffd166" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="350" y="126" fill="#eef3ef" font-size="12" font-weight="700" text-anchor="end">49本</text>
+<g fill="#9db0a4" font-size="11">
+<text x="36" y="172" text-anchor="middle">11/13</text>
+<text x="183.7" y="172" text-anchor="middle">11/19</text>
+<text x="356" y="172" text-anchor="end">11/26</text>
+</g>
+</svg>
+<div style="font-size:13px;margin-top:4px"><b>64本 → 49本</b>(<b style="color:#3ddc84">−15本</b>) ・ MPR <b>3.28 → 4.29</b></div>
+<div style="font-size:11px;color:#9db0a4;margin-top:4px">※ 表示はサンプルデータです。実機では点をタップすると日別詳細へ移動します。</div>
+</section>
+
+<section style="background:#18201b;border:1px solid #2b382f;border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between;align-items:baseline">
+<span style="font-size:15px;font-weight:700">ナンバー別の平均本数</span>
+<span style="font-size:12px;color:#9db0a4">直近7日</span>
+</div>
+<div style="display:flex;align-items:center;gap:10px;height:24px"><span style="width:44px;font-size:14px;font-weight:700">20</span><div style="flex:1;height:10px;border-radius:5px;background:#222d26"><div style="width:51%;height:10px;border-radius:5px;background:#3ddc84"></div></div><span style="width:84px;text-align:right;font-size:14px;font-weight:700">5.1本</span></div>
+<div style="display:flex;align-items:center;gap:10px;height:24px"><span style="width:44px;font-size:14px;font-weight:700">19</span><div style="flex:1;height:10px;border-radius:5px;background:#222d26"><div style="width:56%;height:10px;border-radius:5px;background:#3ddc84"></div></div><span style="width:84px;text-align:right;font-size:14px;font-weight:700">5.6本</span></div>
+<div style="display:flex;align-items:center;gap:10px;height:24px"><span style="width:44px;font-size:14px;font-weight:700">18</span><div style="flex:1;height:10px;border-radius:5px;background:#222d26"><div style="width:60%;height:10px;border-radius:5px;background:#3ddc84"></div></div><span style="width:84px;text-align:right;font-size:14px;font-weight:700">6.0本</span></div>
+<div style="display:flex;align-items:center;gap:10px;height:24px"><span style="width:44px;font-size:14px;font-weight:700">17</span><div style="flex:1;height:10px;border-radius:5px;background:#222d26"><div style="width:72%;height:10px;border-radius:5px;background:#3ddc84"></div></div><span style="width:84px;text-align:right;font-size:14px;font-weight:700">7.2本</span></div>
+<div style="display:flex;align-items:center;gap:10px;height:24px"><span style="width:44px;font-size:14px;font-weight:700">16</span><div style="flex:1;height:10px;border-radius:5px;background:#222d26"><div style="width:84%;height:10px;border-radius:5px;background:#ffd166"></div></div><span style="width:84px;text-align:right;font-size:14px;font-weight:700">8.4本</span></div>
+<div style="display:flex;align-items:center;gap:10px;height:24px"><span style="width:44px;font-size:14px;font-weight:700">15</span><div style="flex:1;height:10px;border-radius:5px;background:#222d26"><div style="width:79%;height:10px;border-radius:5px;background:#3ddc84"></div></div><span style="width:84px;text-align:right;font-size:14px;font-weight:700">7.9本</span></div>
+<div style="display:flex;align-items:center;gap:10px;height:24px"><span style="width:44px;font-size:14px;font-weight:700">ブル</span><div style="flex:1;height:10px;border-radius:5px;background:#222d26"><div style="width:93%;height:10px;border-radius:5px;background:#ff7a7a"></div></div><span style="width:84px;text-align:right;font-size:14px;font-weight:700"><span style="font-size:11px;font-weight:700;color:#ff7a7a;border:1px solid #ff7a7a;border-radius:6px;padding:1px 6px;margin-right:6px">苦手</span>9.3本</span></div>
+</section>
+
+</div>
+
+<nav aria-label="メインメニュー" style="height:72px;flex:none;box-sizing:border-box;display:flex;border-top:1px solid #2b382f;background:#121915;margin-top:16px">
+<a href="Main.dc.html" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#9db0a4;font-size:12px;font-weight:500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>ホーム</a>
+<a href="Graph.dc.html" aria-current="page" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#3ddc84;font-size:12px;font-weight:700">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg>グラフ</a>
+<a href="Detail.dc.html" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#9db0a4;font-size:12px;font-weight:500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>履歴</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":412,"height":915}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

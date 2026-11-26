@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>設定</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}
+a:focus-visible,button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
+button{font-family:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="position:relative;width:412px;height:915px;box-sizing:border-box;background:#0f1411;color:#eef3ef;font-family:'Noto Sans JP',system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden;padding:24px 20px">
+
+<div style="display:flex;align-items:center;gap:4px;height:48px">
+<a href="Main.dc.html" aria-label="ホームへ戻る" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin-left:-10px">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+</a>
+<h1 style="margin:0;font-size:22px;font-weight:900">設定</h1>
+</div>
+
+<div style="margin-top:16px;font-size:13px;color:#9db0a4">バックアップ</div>
+<section style="margin-top:8px;background:#18201b;border:1px solid #2b382f;border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<div>
+<div style="font-size:12px;color:#9db0a4">前回のバックアップ</div>
+<div style="font-size:16px;font-weight:700;margin-top:2px">11/21(土) 20:10</div>
+</div>
+<span style="font-size:12px;font-weight:700;color:#ffd166;border:1px solid #ffd166;border-radius:12px;padding:3px 10px">5日前</span>
+</div>
+
+<button onClick="{{ doExport }}" style="height:56px;border:0;border-radius:16px;background:#3ddc84;color:#06210f;font-size:17px;font-weight:900">バックアップを書き出す</button>
+<div style="font-size:12px;color:#9db0a4;margin-top:-4px">ファイル保存の画面で、保存する場所とファイル名を選びます。</div>
+
+<button onClick="{{ openConfirm }}" style="height:56px;border-radius:16px;background:transparent;border:1px solid #5b6f62;color:#eef3ef;font-size:17px;font-weight:700">バックアップを読み込む</button>
+<div style="font-size:12px;color:#9db0a4;margin-top:-4px">機種変更やデータが消えたときに使います。今のデータは読み込んだ内容に置き換わります。</div>
+</section>
+
+<div style="margin-top:20px;font-size:13px;color:#9db0a4">データ</div>
+<section style="margin-top:8px;background:#18201b;border:1px solid #2b382f;border-radius:20px;padding:4px 16px">
+<div style="display:flex;justify-content:space-between;align-items:center;height:52px;border-bottom:1px solid #2b382f;font-size:14px">
+<span>保存されている練習</span><span style="font-weight:700">21回(14日分)</span>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:center;height:52px;font-size:14px">
+<span>バックアップの形式</span><span style="font-weight:700">JSON(darts-data.json)</span>
+</div>
+</section>
+
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+<div role="status" style="position:absolute;left:20px;right:20px;bottom:28px;height:52px;border-radius:14px;background:#eef3ef;color:#0f1411;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center">{{toast}}</div>
+</sc-if>
+
+<sc-if value="{{ showConfirm }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.65);display:flex;align-items:center;justify-content:center;padding:24px">
+<div role="dialog" aria-label="読み込みの確認" style="width:100%;box-sizing:border-box;background:#18201b;border:1px solid #2b382f;border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:12px">
+<div style="font-size:18px;font-weight:900">バックアップを読み込みますか?</div>
+<div style="font-size:14px;color:#c9d6cd;line-height:1.6">今の端末内のデータは、選んだファイルの内容に置き換わります。この操作は取り消せません。</div>
+<div style="display:flex;gap:12px;margin-top:8px">
+<button onClick="{{ cancel }}" style="flex:1;height:52px;border-radius:14px;background:transparent;border:1px solid #5b6f62;color:#eef3ef;font-size:15px;font-weight:700">キャンセル</button>
+<button onClick="{{ doImport }}" style="flex:1;height:52px;border:0;border-radius:14px;background:#ff7a7a;color:#2b0b0b;font-size:15px;font-weight:900">読み込む</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":412,"height":915}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { confirm: false, toast: '' };
+  }
+  renderVals() {
+    return {
+      showConfirm: this.state.confirm,
+      hasToast: this.state.toast !== '',
+      toast: this.state.toast,
+      openConfirm: () => this.setState({ confirm: true, toast: '' }),
+      cancel: () => this.setState({ confirm: false }),
+      doImport: () => this.setState({ confirm: false, toast: 'バックアップを読み込みました' }),
+      doExport: () => this.setState({ toast: 'darts-data.json に書き出しました' })
+    };
+  }
+}
+</script>
+</body>
+</html>
