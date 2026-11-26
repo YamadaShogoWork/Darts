@@ -12,6 +12,9 @@ interface MenuDao {
     @Query("SELECT * FROM menu WHERE id = :id")
     suspend fun get(id: Long): MenuEntity?
 
+    @Query("SELECT * FROM menu WHERE ruleType = :ruleType ORDER BY id LIMIT 1")
+    suspend fun byRuleType(ruleType: String): MenuEntity?
+
     @Insert
     suspend fun insert(menu: MenuEntity): Long
 

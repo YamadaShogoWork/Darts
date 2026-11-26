@@ -5,6 +5,7 @@ import android.database.SQLException
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dartspractice.app.data.MenuSelection
 import com.dartspractice.app.data.PracticeRepository
 import com.dartspractice.app.data.StatsRepository
 import com.dartspractice.app.data.backup.BackupCodec
@@ -13,15 +14,13 @@ import com.dartspractice.app.data.backup.BackupFormatException
 import com.dartspractice.app.data.backup.BackupPrefs
 import com.dartspractice.app.data.backup.BackupRepository
 import com.dartspractice.app.data.debug.SampleData
-import com.dartspractice.app.domain.rule.PracticeRules
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -53,12 +52,13 @@ class SettingsViewModel(
     private val backup: BackupRepository,
     private val prefs: BackupPrefs,
     private val resolver: ContentResolver,
+    private val selection: MenuSelection,
     private val now: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
 
-    val count: StateFlow<DataCount> = flow { emit(repo.defaultMenu()) }
-        .flatMapLatest { menu -> stats.daily(menu.id) }
-        .map { daily -> DataCount(daily.sumOf { it.sessions }, daily.size) }
+    /** 全メニューの合計。 */
+    val count: StateFlow<DataCount> = stats.totals()
+        .map { DataCount(it.sessions, it.days) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DataCount())
 
     private val _lastBackupAt = MutableStateFlow(prefs.lastBackupAt)
@@ -116,15 +116,14 @@ class SettingsViewModel(
         }
     }
 
-    /** 開発用: 14日分のサンプルの練習を追加する。 */
+    /** 開発用: 選んでいるメニューに、14日分のサンプルの練習を追加する。 */
     fun insertSamples() = run {
-        val menu = repo.defaultMenu()
-        val rule = PracticeRules.of(menu.ruleType)
+        val (menu, rule) = selection.selected.first()
         val samples = SampleData.generate(rule, LocalDate.now())
         samples.forEach {
             repo.insertCompleted(menu.id, rule, it.startedAt, it.finishedAt, it.rawMarks, it.memo)
         }
-        SettingsMessage("サンプルの練習を${samples.size}回分追加しました")
+        SettingsMessage("${menu.name}に、サンプルの練習を${samples.size}回分追加しました")
     }
 
     /** 開発用: 練習と投の記録をすべて消す。 */

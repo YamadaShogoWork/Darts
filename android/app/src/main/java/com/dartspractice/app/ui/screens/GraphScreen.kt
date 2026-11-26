@@ -32,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dartspractice.app.appViewModel
-import com.dartspractice.app.domain.rule.Mpr
 import com.dartspractice.app.domain.stats.Trend
 import com.dartspractice.app.ui.Format
 import com.dartspractice.app.ui.graph.GraphUiState
@@ -47,8 +46,9 @@ import kotlin.math.abs
 @Composable
 fun GraphScreen(onOpenDay: (String) -> Unit) {
     ScreenOrientation(allowLandscape = false)
-    val vm = appViewModel { GraphViewModel(it.repository, it.stats) }
+    val vm = appViewModel { GraphViewModel(it.menuSelection, it.stats) }
     val ui by vm.ui.collectAsStateWithLifecycle()
+    val rate = ui.rule?.rate
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState())
@@ -67,12 +67,12 @@ fun GraphScreen(onOpenDay: (String) -> Unit) {
         DartsCard {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    if (ui.metric == Metric.Mpr) "日ごとのMPR" else "日ごとの平均本数",
+                    if (ui.metric == Metric.Rate) "日ごとの${rate?.label.orEmpty()}" else "日ごとの平均本数",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f),
                 )
-                Segmented(Metric.entries.map { it.label }, ui.metric.ordinal) { vm.setMetric(Metric.entries[it]) }
+                Segmented(listOf("本数", rate?.label.orEmpty()), ui.metric.ordinal) { vm.setMetric(Metric.entries[it]) }
             }
 
             if (ui.points.isEmpty()) {
@@ -84,7 +84,7 @@ fun GraphScreen(onOpenDay: (String) -> Unit) {
                     points = ui.points,
                     movingAverage = ui.movingAverage,
                     metric = ui.metric,
-                    totalMarks = ui.totalMarks,
+                    rate = rate ?: return@DartsCard,
                     startDay = ui.startDay,
                     endDay = ui.today,
                     onSelect = vm::select,
@@ -96,7 +96,8 @@ fun GraphScreen(onOpenDay: (String) -> Unit) {
             }
         }
 
-        DartsCard {
+        // ナンバーが1つのメニューでは出さない
+        if (ui.targets.size > 1) DartsCard {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("ナンバー別の平均本数", fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 Segmented(NumberPeriod.entries.map { it.label }, ui.numberPeriod.ordinal) {
@@ -130,6 +131,7 @@ private fun LegendItem(color: Color, label: String, dot: Boolean) {
 /** 期間の最初と最後の日の比較。「64本 → 49本(−15本) ・ MPR 3.28 → 4.29」 */
 @Composable
 private fun ChangeLine(ui: GraphUiState) {
+    val rate = ui.rule?.rate ?: return
     val change = Trend.change(ui.points) ?: return
     if (change.first.day == change.last.day) return
     val diff = change.diff
@@ -147,11 +149,11 @@ private fun ChangeLine(ui: GraphUiState) {
             withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = if (diff < 0) DartsColors.Accent else DartsColors.SubText)) {
                 append(diffText)
             }
-            append(") ・ MPR ")
+            append(") ・ ${rate.label} ")
             withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = DartsColors.Text)) {
                 append(
-                    "${Mpr.format(Mpr.calc(ui.totalMarks, change.first.avgDarts))} → " +
-                        Mpr.format(Mpr.calc(ui.totalMarks, change.last.avgDarts)),
+                    "${rate.format(rate.of(change.first.avgDarts))} → " +
+                        rate.format(rate.of(change.last.avgDarts)),
                 )
             }
         },

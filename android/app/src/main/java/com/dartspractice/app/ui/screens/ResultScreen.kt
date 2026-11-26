@@ -29,12 +29,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dartspractice.app.appViewModel
-import com.dartspractice.app.domain.rule.Mpr
 import com.dartspractice.app.ui.Format
 import com.dartspractice.app.ui.result.ResultViewModel
 import com.dartspractice.app.ui.theme.DartsColors
 
-/** 結果。合計本数・MPR・前回との比較・ナンバー別本数・メモ。 */
+/** 結果。合計本数・MPR(メニューごとの指標)・前回との比較・ナンバー別本数・メモ。 */
 @Composable
 fun ResultScreen(sessionId: Long, onDone: () -> Unit) {
     ScreenOrientation(allowLandscape = false)
@@ -104,9 +103,9 @@ fun ResultScreen(sessionId: Long, onDone: () -> Unit) {
             }
             Text(
                 buildAnnotatedString {
-                    append("MPR(1ターンの平均マーク数) ")
+                    append("${p.rule.rate.longLabel} ")
                     withStyle(SpanStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DartsColors.Text)) {
-                        append(Mpr.format(Mpr.calc(p.rule.totalMarks, p.totalDarts.toDouble())))
+                        append(p.rule.rate.format(p.rule.rate.of(p.totalDarts.toDouble())))
                     }
                 },
                 fontSize = 13.sp,
@@ -115,7 +114,8 @@ fun ResultScreen(sessionId: Long, onDone: () -> Unit) {
             )
         }
 
-        DartsCard {
+        // ナンバーが1つのメニューでは出さない
+        if (p.rule.targets.size > 1) DartsCard {
             SectionTitle("ナンバー別の本数")
             Column(Modifier.padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 p.rule.targets.forEach { t ->

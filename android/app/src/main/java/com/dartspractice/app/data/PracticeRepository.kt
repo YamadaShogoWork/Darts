@@ -31,6 +31,20 @@ class PracticeRepository(
     suspend fun defaultMenu(): MenuEntity =
         menus.first() ?: error("メニューがありません")
 
+    /**
+     * メニューの一覧。用意しているルール(PracticeRules)のうち、まだメニューがないものは自動で作る。
+     * DBの形は変えずに、行を足すだけ。
+     */
+    suspend fun menus(): List<MenuEntity> = db.withTransaction {
+        PracticeRules.all.forEach { rule ->
+            if (menus.byRuleType(rule.ruleType) == null) {
+                menus.insert(MenuEntity(name = rule.defaultName, ruleType = rule.ruleType))
+            }
+        }
+        val order = PracticeRules.all.map { it.ruleType }
+        menus.all().sortedWith(compareBy({ order.indexOf(it.ruleType).let { i -> if (i < 0) Int.MAX_VALUE else i } }, { it.id }))
+    }
+
     /** 再開できる練習(1投以上記録した未完了の練習)。なければ null。 */
     suspend fun resumable(menuId: Long): SessionEntity? =
         sessions.unfinished(menuId).firstOrNull { throwsDao.count(it.id) > 0 }

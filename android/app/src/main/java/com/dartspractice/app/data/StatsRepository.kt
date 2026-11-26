@@ -1,6 +1,7 @@
 package com.dartspractice.app.data
 
 import com.dartspractice.app.data.db.DailyStat
+import com.dartspractice.app.data.db.DataTotals
 import com.dartspractice.app.data.db.DartThrowEntity
 import com.dartspractice.app.data.db.DartsDatabase
 import com.dartspractice.app.data.db.SessionSummary
@@ -15,6 +16,7 @@ class StatsRepository(db: DartsDatabase) {
     fun best(menuId: Long): Flow<SessionSummary?> = dao.best(menuId)
     fun sessionsOfDay(menuId: Long, day: String): Flow<List<SessionSummary>> = dao.sessionsOfDay(menuId, day)
     fun throwsOfDay(menuId: Long, day: String): Flow<List<DartThrowEntity>> = dao.throwsOfDay(menuId, day)
+    fun totals(): Flow<DataTotals> = dao.totals()
     fun targetStats(menuId: Long, fromDay: String): Flow<List<TargetStat>> = dao.targetStats(menuId, fromDay)
     suspend fun previous(menuId: Long, finishedAt: Long): SessionSummary? = dao.previous(menuId, finishedAt)
 }

@@ -11,7 +11,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.dartspractice.app.domain.rule.Mpr
+import com.dartspractice.app.domain.rule.RateSpec
 import com.dartspractice.app.domain.stats.DayPoint
 import com.dartspractice.app.ui.Format
 import com.dartspractice.app.ui.graph.Metric
@@ -56,20 +56,20 @@ fun DailyChart(
     points: List<DayPoint>,
     movingAverage: List<DayPoint>,
     metric: Metric,
-    totalMarks: Int,
+    rate: RateSpec,
     startDay: LocalDate,
     endDay: LocalDate,
     onSelect: (LocalDate?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     fun value(avgDarts: Double): Double =
-        if (metric == Metric.Mpr) Mpr.calc(totalMarks, avgDarts) ?: 0.0 else avgDarts
+        if (metric == Metric.Rate) rate.of(avgDarts) ?: 0.0 else avgDarts
 
     val xs = points.map { it.day.toEpochDay() }
     val ys = points.map { value(it.avgDarts) }
     val maYs = movingAverage.map { value(it.avgDarts) }
 
-    val model = remember(points, movingAverage, metric) {
+    val model = remember(points, movingAverage, metric, rate) {
         CartesianChartModel(
             LineCartesianLayerModel.build {
                 series(x = xs, y = ys)
@@ -78,8 +78,8 @@ fun DailyChart(
         )
     }
 
-    // 縦軸の範囲と目盛り(本数は5本ごと、MPRは0.5ごと)
-    val step = if (metric == Metric.Mpr) 0.5 else 5.0
+    // 縦軸の範囲と目盛り(本数は5本ごと、MPR・ブル率はそれぞれの間隔)
+    val step = if (metric == Metric.Rate) rate.axisStep else 5.0
     val all = ys + maYs
     val minY = floor((all.min() - step * 0.4) / step) * step
     val maxY = ceil((all.max() + step * 0.4) / step) * step
@@ -122,8 +122,8 @@ fun DailyChart(
         }
     }
 
-    val unit = if (metric == Metric.Mpr) "" else "本"
-    fun fmt(v: Double) = if (metric == Metric.Mpr) Mpr.format(v) else Format.darts(v)
+    val unit = if (metric == Metric.Rate) "" else "本"
+    fun fmt(v: Double) = if (metric == Metric.Rate) rate.format(v) else Format.darts(v)
     val maByDay = movingAverage.associate { it.day.toEpochDay() to value(it.avgDarts) }
     val byDay = points.associate { it.day.toEpochDay() to value(it.avgDarts) }
 
@@ -138,7 +138,7 @@ fun DailyChart(
                 strokeThickness = 1.dp,
             ),
         ),
-        valueFormatter = remember(points, movingAverage, metric) {
+        valueFormatter = remember(points, movingAverage, metric, rate) {
             DefaultCartesianMarker.ValueFormatter { _, targets ->
                 val x = targets.firstOrNull()?.x?.toLong() ?: return@ValueFormatter ""
                 val day = Format.monthDay(LocalDate.ofEpochDay(x).toString())
@@ -163,8 +163,8 @@ fun DailyChart(
             line = null,
             tick = null,
             guideline = rememberAxisGuidelineComponent(fill = Fill(DartsColors.Border)),
-            valueFormatter = remember(metric) {
-                CartesianValueFormatter { _, v, _ -> if (metric == Metric.Mpr) "%.1f".format(v) else v.toInt().toString() }
+            valueFormatter = remember(metric, rate) {
+                CartesianValueFormatter { _, v, _ -> if (metric == Metric.Rate) rate.axis(v) else v.toInt().toString() }
             },
             itemPlacer = remember(step) { VerticalAxis.ItemPlacer.step({ step }) },
         ),

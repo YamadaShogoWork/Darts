@@ -37,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dartspractice.app.appViewModel
-import com.dartspractice.app.domain.rule.Mpr
 import com.dartspractice.app.ui.Format
 import com.dartspractice.app.ui.detail.DetailUiState
 import com.dartspractice.app.ui.detail.DetailViewModel
@@ -45,11 +44,11 @@ import com.dartspractice.app.ui.detail.SessionDetail
 import com.dartspractice.app.ui.theme.DartsColors
 import com.dartspractice.app.ui.theme.DartsIcons
 
-/** 日別詳細。その日の練習一覧・各練習のMPR・ナンバー別の投・メモ。‹ › で練習した日を移動する。 */
+/** 日別詳細。その日の練習一覧・各練習のMPR(メニューごとの指標)・ナンバー別の投・メモ。‹ › で練習した日を移動する。 */
 @Composable
 fun DetailScreen(date: String?, onBack: () -> Unit) {
     ScreenOrientation(allowLandscape = false)
-    val vm = appViewModel(key = "detail-${date ?: "latest"}") { DetailViewModel(date, it.repository, it.stats) }
+    val vm = appViewModel(key = "detail-${date ?: "latest"}") { DetailViewModel(date, it.menuSelection, it.stats) }
     val ui by vm.ui.collectAsStateWithLifecycle()
 
     Column(
@@ -84,16 +83,17 @@ private fun DayArrow(icon: androidx.compose.ui.graphics.vector.ImageVector, labe
 
 @Composable
 private fun DayContent(ui: DetailUiState, onSelect: (Int) -> Unit) {
+    val rule = ui.rule ?: return
     val stat = ui.dayStat
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        SummaryCard("練習回数", "${stat?.sessions ?: 0}", "回", null, Modifier.weight(1f))
+        SummaryCard("練習回数", "${stat?.sessions ?: 0}", "回", null, null, Modifier.weight(1f))
         SummaryCard(
             "平均", stat?.let { Format.darts(it.avgDarts) } ?: "--", "本",
-            stat?.let { Mpr.calc(ui.totalMarks, it.avgDarts) }, Modifier.weight(1f),
+            rule.rate.label, rule.rate.format(stat?.let { rule.rate.of(it.avgDarts) }), Modifier.weight(1f),
         )
         SummaryCard(
             "最少", stat?.minDarts?.toString() ?: "--", "本",
-            stat?.let { Mpr.calc(ui.totalMarks, it.minDarts.toDouble()) }, Modifier.weight(1f),
+            rule.rate.label, rule.rate.format(stat?.let { rule.rate.of(it.minDarts.toDouble()) }), Modifier.weight(1f),
         )
     }
 
@@ -135,14 +135,15 @@ private fun DayContent(ui: DetailUiState, onSelect: (Int) -> Unit) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Breakdown(ui: DetailUiState, index: Int, s: SessionDetail) {
+    val rule = ui.rule ?: return
     DartsCard {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text("${index + 1}回目の内訳", fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             Text(
                 buildAnnotatedString {
-                    append("MPR ")
+                    append("${rule.rate.label} ")
                     withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = DartsColors.Text)) {
-                        append(Mpr.format(Mpr.calc(ui.totalMarks, s.summary.darts.toDouble())))
+                        append(rule.rate.format(rule.rate.of(s.summary.darts.toDouble())))
                     }
                     append(" ・ 開始 ${Format.time(s.summary.startedAt)}")
                 },
@@ -191,7 +192,7 @@ private fun Breakdown(ui: DetailUiState, index: Int, s: SessionDetail) {
 }
 
 @Composable
-private fun SummaryCard(title: String, value: String, unit: String, mpr: Double?, modifier: Modifier = Modifier) {
+private fun SummaryCard(title: String, value: String, unit: String, rateLabel: String?, rateText: String?, modifier: Modifier = Modifier) {
     DartsCard(modifier = modifier) {
         Text(title, fontSize = 12.sp, color = DartsColors.SubText)
         Text(
@@ -202,11 +203,11 @@ private fun SummaryCard(title: String, value: String, unit: String, mpr: Double?
             fontSize = 24.sp,
             fontWeight = FontWeight.Black,
         )
-        if (mpr != null) {
+        if (rateLabel != null && rateText != null) {
             Text(
                 buildAnnotatedString {
-                    append("MPR ")
-                    withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = DartsColors.Text)) { append(Mpr.format(mpr)) }
+                    append("$rateLabel ")
+                    withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = DartsColors.Text)) { append(rateText) }
                 },
                 fontSize = 12.sp,
                 color = DartsColors.SubText,

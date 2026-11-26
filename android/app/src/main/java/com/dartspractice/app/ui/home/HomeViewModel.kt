@@ -2,12 +2,14 @@ package com.dartspractice.app.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dartspractice.app.data.MenuSelection
 import com.dartspractice.app.data.PracticeRepository
+import com.dartspractice.app.data.SelectedMenu
 import com.dartspractice.app.data.StatsRepository
 import com.dartspractice.app.data.db.DailyStat
+import com.dartspractice.app.data.db.MenuEntity
 import com.dartspractice.app.data.db.SessionSummary
 import com.dartspractice.app.data.db.TargetStat
-import com.dartspractice.app.domain.rule.PracticeRules
 import com.dartspractice.app.domain.stats.DayPoint
 import com.dartspractice.app.domain.stats.Trend
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -18,7 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -29,8 +31,9 @@ data class ResumeCandidate(val sessionId: Long, val menuId: Long, val darts: Int
 
 /** ホームに出す集計。 */
 data class HomeStats(
-    val menuName: String = "",
-    val totalMarks: Int = 0,
+    /** 並べるメニューと、選んでいるメニュー・そのルール(読み込み中は null)。 */
+    val menus: List<MenuEntity> = emptyList(),
+    val selected: SelectedMenu? = null,
     /** 今日の集計。今日まだ練習していなければ null。 */
     val today: DailyStat? = null,
     val best: SessionSummary? = null,
@@ -46,19 +49,21 @@ data class HomeStats(
 class HomeViewModel(
     private val repo: PracticeRepository,
     stats: StatsRepository,
+    private val selection: MenuSelection,
 ) : ViewModel() {
 
-    val stats: StateFlow<HomeStats> = flow { emit(repo.defaultMenu()) }
-        .flatMapLatest { menu ->
-            val totalMarks = PracticeRules.of(menu.ruleType).totalMarks
+    val stats: StateFlow<HomeStats> = selection.selected
+        .flatMapLatest { sel ->
+            val menu = sel.menu
+            val menus = selection.menus()
             val now = LocalDate.now()
             val weekFrom = now.minusDays(6).toString()
             combine(stats.daily(menu.id), stats.best(menu.id), stats.targetStats(menu.id, weekFrom)) { daily, best, targets ->
                 val today = now.toString()
                 val all = daily.map { DayPoint(LocalDate.parse(it.day), it.avgDarts) }
                 HomeStats(
-                    menuName = menu.name,
-                    totalMarks = totalMarks,
+                    menus = menus,
+                    selected = sel,
                     today = daily.firstOrNull { it.day == today },
                     best = best,
                     latest = daily.lastOrNull(),
@@ -80,7 +85,7 @@ class HomeViewModel(
     private var busy = false
 
     fun onStartPressed() = launchOnce {
-        val menu = repo.defaultMenu()
+        val menu = selection.selected.first().menu
         val unfinished = repo.resumable(menu.id)
         if (unfinished != null) {
             _resume.value = ResumeCandidate(unfinished.id, menu.id, repo.load(unfinished.id).state.totalDarts)
@@ -100,6 +105,9 @@ class HomeViewModel(
         _resume.value = null
         launchOnce { _openRecord.send(repo.startNew(c.menuId)) }
     }
+
+    /** メニューを切り替える。 */
+    fun selectMenu(menuId: Long) = selection.select(menuId)
 
     fun dismissResume() {
         _resume.value = null

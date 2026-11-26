@@ -32,6 +32,9 @@ data class DailyStat(
     val minDarts: Int,
 )
 
+/** 全メニューの合計。 */
+data class DataTotals(val sessions: Int, val days: Int)
+
 /** ナンバー別の本数。avgDarts は練習1回あたりの平均本数。 */
 data class TargetStat(
     val target: String,
@@ -86,6 +89,16 @@ interface StatsDao {
         """,
     )
     fun targetStats(menuId: Long, fromDay: String): Flow<List<TargetStat>>
+
+    /** 全メニューの完了した練習の数と、練習した日数(設定画面の「保存されている練習」)。 */
+    @Query(
+        """
+        SELECT COUNT(*) AS sessions,
+               COUNT(DISTINCT date(finishedAt / 1000, 'unixepoch', 'localtime')) AS days
+        FROM session WHERE finished = 1 AND finishedAt IS NOT NULL
+        """,
+    )
+    fun totals(): Flow<DataTotals>
 
     /** 指定した練習より前に終わった、完了した練習のうち最後のもの。 */
     @Query("SELECT * FROM ($SUMMARIES) WHERE finishedAt < :finishedAt ORDER BY finishedAt DESC LIMIT 1")

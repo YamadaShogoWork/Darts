@@ -2,19 +2,18 @@ package com.dartspractice.app.ui.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.dartspractice.app.data.PracticeRepository
+import com.dartspractice.app.data.MenuSelection
 import com.dartspractice.app.data.StatsRepository
 import com.dartspractice.app.data.db.DailyStat
 import com.dartspractice.app.data.db.DartThrowEntity
 import com.dartspractice.app.data.db.SessionSummary
-import com.dartspractice.app.domain.rule.PracticeRules
+import com.dartspractice.app.domain.rule.PracticeRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 
@@ -25,7 +24,8 @@ data class DetailUiState(
     val loading: Boolean = true,
     val menuName: String = "",
     val targets: List<String> = emptyList(),
-    val totalMarks: Int = 0,
+    /** 選んでいるメニューのルール(読み込み中は null)。 */
+    val rule: PracticeRule? = null,
     /** 練習した日(古い順)。 */
     val days: List<String> = emptyList(),
     /** 表示している日。練習がひとつもなければ null。 */
@@ -45,23 +45,22 @@ data class DetailUiState(
 @OptIn(ExperimentalCoroutinesApi::class)
 class DetailViewModel(
     date: String?,
-    repo: PracticeRepository,
+    selection: MenuSelection,
     stats: StatsRepository,
 ) : ViewModel() {
 
     private val requestedDay = MutableStateFlow(date)
     private val selected = MutableStateFlow(0)
 
-    val ui: StateFlow<DetailUiState> = flow { emit(repo.defaultMenu()) }
-        .flatMapLatest { menu ->
-            val rule = PracticeRules.of(menu.ruleType)
+    val ui: StateFlow<DetailUiState> = selection.selected
+        .flatMapLatest { (menu, rule) ->
             combine(stats.daily(menu.id), requestedDay) { daily, requested -> daily to (requested ?: daily.lastOrNull()?.day) }
                 .flatMapLatest { (daily, day) ->
                     val base = DetailUiState(
                         loading = false,
                         menuName = menu.name,
                         targets = rule.targets,
-                        totalMarks = rule.totalMarks,
+                        rule = rule,
                         days = daily.map { it.day },
                         day = day,
                         dayStat = daily.firstOrNull { it.day == day },

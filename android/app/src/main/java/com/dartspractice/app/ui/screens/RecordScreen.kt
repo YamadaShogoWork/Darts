@@ -56,7 +56,6 @@ import com.dartspractice.app.appViewModel
 import com.dartspractice.app.domain.rule.Cricket10Rule.BULL
 import com.dartspractice.app.domain.rule.PracticeRule
 import com.dartspractice.app.domain.rule.PracticeState
-import com.dartspractice.app.domain.rule.PracticeState.Companion.MARKS_TO_CLEAR
 import com.dartspractice.app.ui.record.RecordViewModel
 import com.dartspractice.app.ui.theme.DartsColors
 import com.dartspractice.app.ui.theme.DartsIcons
@@ -102,7 +101,7 @@ fun RecordScreen(sessionId: Long, onShowResult: (Long) -> Unit, onBack: () -> Un
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     header()
-                    NumberRail(rule, p, cellHeight = 50)
+                    if (rule.targets.size > 1) NumberRail(rule, p, cellHeight = 50)
                     CurrentNumberCard(p, numberSize = 64.sp)
                 }
                 // ターンと何投目かは、入力ボタンのすぐ上に置いて常に見えるようにする
@@ -121,8 +120,11 @@ fun RecordScreen(sessionId: Long, onShowResult: (Long) -> Unit, onBack: () -> Un
                 Column(Modifier.fillMaxSize()) {
                     header()
                     Spacer(Modifier.height(12.dp))
-                    NumberRail(rule, p, cellHeight = 56)
-                    Spacer(Modifier.height(16.dp))
+                    // ナンバーが1つのメニュー(ブル10本など)では、ナンバーの進み具合は出さない
+                    if (rule.targets.size > 1) {
+                        NumberRail(rule, p, cellHeight = 56)
+                        Spacer(Modifier.height(16.dp))
+                    }
                     CurrentNumberCard(p, numberSize = numberSize)
                     Spacer(Modifier.height(12.dp))
                     TurnRow(p)
@@ -181,7 +183,7 @@ private fun NumberRail(rule: PracticeRule, p: PracticeState, cellHeight: Int) {
     val darts = p.dartsByTarget
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         rule.targets.forEach { t ->
-            val done = (p.marksByTarget[t] ?: 0) >= MARKS_TO_CLEAR
+            val done = p.isCleared(t)
             val current = t == p.currentTarget
             val (bg, fg, border) = when {
                 done -> Triple(DartsColors.DoneBg, DartsColors.Accent, DartsColors.DoneBorder)
@@ -227,14 +229,15 @@ private fun CurrentNumberCard(p: PracticeState, numberSize: TextUnit) {
     // 終了後は最後のナンバー(ブル)を出す
     val shown = p.currentTarget ?: p.rule.targets.last()
     val marks = p.marksByTarget[shown] ?: 0
+    val clear = p.rule.marksToClear(shown)
     DartsCard(radius = 20.dp) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text("いまのナンバー", fontSize = 12.sp, color = DartsColors.SubText, modifier = Modifier.weight(1f))
             Text(
                 buildAnnotatedString {
-                    append("マーク ")
+                    append("${p.rule.progressLabel} ")
                     withStyle(SpanStyle(fontSize = 22.sp, fontWeight = FontWeight.Black, color = DartsColors.Accent)) { append("$marks") }
-                    append(" / $MARKS_TO_CLEAR")
+                    append(" / $clear")
                 },
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
@@ -249,10 +252,10 @@ private fun CurrentNumberCard(p: PracticeState, numberSize: TextUnit) {
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         )
         Row(
-            Modifier.fillMaxWidth().semantics { contentDescription = "10マーク中${marks}マーク" },
+            Modifier.fillMaxWidth().semantics { contentDescription = "${clear}中${marks}" },
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            repeat(MARKS_TO_CLEAR) { i ->
+            repeat(clear) { i ->
                 Box(
                     Modifier.weight(1f).height(12.dp).clip(RoundedCornerShape(4.dp))
                         .background(if (i < marks) DartsColors.Accent else DartsColors.Border),

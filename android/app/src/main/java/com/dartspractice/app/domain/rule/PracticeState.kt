@@ -4,18 +4,21 @@ package com.dartspractice.app.domain.rule
 data class PracticeState(
     val rule: PracticeRule,
     val throws: List<ThrowRecord>,
-    /** ナンバーごとの累計マーク数(全ナンバーを含む)。 */
+    /** ナンバーごとの累計(マーク数。ブル10本では入った本数)。全ナンバーを含む。 */
     val marksByTarget: Map<String, Int>,
 ) {
+    /** そのナンバーを埋め終わったか。 */
+    fun isCleared(target: String): Boolean = (marksByTarget[target] ?: 0) >= rule.marksToClear(target)
+
     /** 最後のナンバーまで完了したか。 */
     val finished: Boolean
-        get() = rule.targets.all { (marksByTarget[it] ?: 0) >= MARKS_TO_CLEAR }
+        get() = rule.targets.all(::isCleared)
 
     /** 今投げるナンバー。終了していれば null。 */
     val currentTarget: String?
-        get() = rule.targets.firstOrNull { (marksByTarget[it] ?: 0) < MARKS_TO_CLEAR }
+        get() = rule.targets.firstOrNull { !isCleared(it) }
 
-    /** 今のナンバーの累計マーク数。 */
+    /** 今のナンバーの累計。 */
     val currentMarks: Int
         get() = currentTarget?.let { marksByTarget[it] ?: 0 } ?: 0
 
@@ -38,8 +41,4 @@ data class PracticeState(
     /** 直前の1投を取り消した状態。1投もなければそのまま。 */
     fun undo(): PracticeState =
         if (throws.isEmpty()) this else rule.replay(throws.dropLast(1).map { it.rawMarks })
-
-    companion object {
-        const val MARKS_TO_CLEAR = 10
-    }
 }

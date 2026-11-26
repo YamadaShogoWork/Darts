@@ -2,10 +2,10 @@ package com.dartspractice.app.ui.graph
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.dartspractice.app.data.PracticeRepository
+import com.dartspractice.app.data.MenuSelection
 import com.dartspractice.app.data.StatsRepository
 import com.dartspractice.app.data.db.TargetStat
-import com.dartspractice.app.domain.rule.PracticeRules
+import com.dartspractice.app.domain.rule.PracticeRule
 import com.dartspractice.app.domain.stats.DayPoint
 import com.dartspractice.app.domain.stats.Trend
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import java.time.LocalDate
 
@@ -23,8 +22,8 @@ enum class Period(val label: String, val days: Int?) {
     Week("7日", 7), Month("30日", 30), All("全期間", null)
 }
 
-/** 縦軸の指標。 */
-enum class Metric(val label: String) { Darts("本数"), Mpr("MPR") }
+/** 縦軸の指標。Rate はメニューごとの指標(クリケットは MPR、ブル10本はブル率)。 */
+enum class Metric { Darts, Rate }
 
 /** ナンバー別平均の期間。 */
 enum class NumberPeriod(val label: String, val days: Int) { Week("直近7日", 7), Month("直近30日", 30) }
@@ -33,7 +32,8 @@ data class GraphUiState(
     val loading: Boolean = true,
     val menuName: String = "",
     val targets: List<String> = emptyList(),
-    val totalMarks: Int = 0,
+    /** 選んでいるメニューのルール(読み込み中は null)。 */
+    val rule: PracticeRule? = null,
     val today: LocalDate = LocalDate.now(),
     val period: Period = Period.Week,
     val metric: Metric = Metric.Darts,
@@ -53,7 +53,7 @@ data class GraphUiState(
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class GraphViewModel(
-    repo: PracticeRepository,
+    selection: MenuSelection,
     stats: StatsRepository,
 ) : ViewModel() {
 
@@ -62,9 +62,8 @@ class GraphViewModel(
     private val numberPeriod = MutableStateFlow(NumberPeriod.Week)
     private val selected = MutableStateFlow<LocalDate?>(null)
 
-    val ui: StateFlow<GraphUiState> = flow { emit(repo.defaultMenu()) }
-        .flatMapLatest { menu ->
-            val rule = PracticeRules.of(menu.ruleType)
+    val ui: StateFlow<GraphUiState> = selection.selected
+        .flatMapLatest { (menu, rule) ->
             val today = LocalDate.now()
             val targetStats = numberPeriod.flatMapLatest { np ->
                 stats.targetStats(menu.id, today.minusDays((np.days - 1).toLong()).toString())
@@ -77,7 +76,7 @@ class GraphViewModel(
                     loading = false,
                     menuName = menu.name,
                     targets = rule.targets,
-                    totalMarks = rule.totalMarks,
+                    rule = rule,
                     today = today,
                     period = p,
                     metric = m,

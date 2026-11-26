@@ -2,6 +2,8 @@ package com.dartspractice.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dartspractice.app.appViewModel
-import com.dartspractice.app.domain.rule.Mpr
+
 import com.dartspractice.app.ui.Format
 import com.dartspractice.app.ui.home.HomeViewModel
 import com.dartspractice.app.ui.theme.DartsColors
@@ -52,7 +54,7 @@ fun HomeScreen(
     ScreenOrientation(allowLandscape = false)
     val today = LocalDate.now()
 
-    val vm = appViewModel { HomeViewModel(it.repository, it.stats) }
+    val vm = appViewModel { HomeViewModel(it.repository, it.stats, it.menuSelection) }
     val stats by vm.stats.collectAsStateWithLifecycle()
     val resume by vm.resume.collectAsStateWithLifecycle()
     LaunchedEffect(vm) { vm.openRecord.collect(onOpenRecord) }
@@ -93,23 +95,34 @@ fun HomeScreen(
         }
 
         // 今日のメニュー
+        // 今日のメニュー(チップで切り替える。選んだメニューは端末に保存)
+        val sel = stats.selected
         DartsCard(radius = 20.dp) {
             Text("今日のメニュー", fontSize = 12.sp, color = DartsColors.SubText)
-            Text("クリケット10マーク", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))
-            Text("20→15・ブルを各10マークずつ埋める", fontSize = 13.sp, color = DartsColors.SubText, modifier = Modifier.padding(top = 6.dp))
-            Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(
-                    Modifier.height(36.dp).clip(RoundedCornerShape(18.dp)).background(DartsColors.Accent).padding(horizontal = 14.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("クリケット10マーク", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = DartsColors.OnAccent)
-                }
-                // メニュー追加はステップ7で扱う(今は表示だけ)
-                Box(
-                    Modifier.height(36.dp).border(1.dp, DartsColors.Dashed, RoundedCornerShape(18.dp)).padding(horizontal = 14.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("＋ メニュー追加", fontSize = 13.sp, color = DartsColors.SubText)
+            Text(sel?.menu?.name.orEmpty(), fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))
+            Text(sel?.rule?.description.orEmpty(), fontSize = 13.sp, color = DartsColors.SubText, modifier = Modifier.padding(top = 6.dp))
+            Row(
+                Modifier.padding(top = 14.dp).horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                stats.menus.forEach { m ->
+                    val on = m.id == sel?.menu?.id
+                    val shape = RoundedCornerShape(18.dp)
+                    Box(
+                        Modifier.height(36.dp).clip(shape)
+                            .background(if (on) DartsColors.Accent else DartsColors.Surface)
+                            .border(1.dp, if (on) DartsColors.Accent else DartsColors.Dashed, shape)
+                            .clickable { vm.selectMenu(m.id) }
+                            .padding(horizontal = 14.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            m.name,
+                            fontSize = 13.sp,
+                            fontWeight = if (on) FontWeight.Bold else FontWeight.Medium,
+                            color = if (on) DartsColors.OnAccent else DartsColors.SubText,
+                        )
+                    }
                 }
             }
         }
@@ -125,12 +138,14 @@ fun HomeScreen(
 
         // 今日の平均・自己ベスト
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            val rate = sel?.rule?.rate
             val t = stats.today
             StatCard(
                 title = "今日の平均",
                 value = t?.let { Format.darts(it.avgDarts) },
                 sub = t?.let { "${it.sessions}回の平均" } ?: "まだ練習していません",
-                mpr = t?.let { Mpr.calc(stats.totalMarks, it.avgDarts) },
+                rateLabel = rate?.label.orEmpty(),
+                rateText = rate?.format(t?.let { rate.of(it.avgDarts) }) ?: "—",
                 modifier = Modifier.weight(1f),
             )
             val b = stats.best
@@ -138,7 +153,8 @@ fun HomeScreen(
                 title = "自己ベスト",
                 value = b?.darts?.toString(),
                 sub = b?.let { "${Format.monthDay(it.day)} の練習" } ?: "まだ記録がありません",
-                mpr = b?.let { Mpr.calc(stats.totalMarks, it.darts.toDouble()) },
+                rateLabel = rate?.label.orEmpty(),
+                rateText = rate?.format(b?.let { rate.of(it.darts.toDouble()) }) ?: "—",
                 modifier = Modifier.weight(1f),
             )
         }
@@ -174,8 +190,8 @@ fun HomeScreen(
             }
         }
 
-        // 苦手ナンバー(直近7日で平均本数が多い順に2つ)
-        DartsCard {
+        // 苦手ナンバー(直近7日で平均本数が多い順に2つ)。ナンバーが1つのメニューでは出さない
+        if ((sel?.rule?.targets?.size ?: 0) > 1) DartsCard {
             SectionTitle("苦手ナンバー(直近7日の平均)")
             if (stats.weak.isEmpty()) {
                 PlaceholderNote("直近7日に完了した練習はありません")
@@ -221,7 +237,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun StatCard(title: String, value: String?, sub: String, mpr: Double?, modifier: Modifier = Modifier) {
+private fun StatCard(title: String, value: String?, sub: String, rateLabel: String, rateText: String, modifier: Modifier = Modifier) {
     DartsCard(modifier = modifier) {
         Text(title, fontSize = 12.sp, color = DartsColors.SubText)
         Text(
@@ -240,8 +256,8 @@ private fun StatCard(title: String, value: String?, sub: String, mpr: Double?, m
         Text(sub, fontSize = 12.sp, color = DartsColors.SubText)
         Text(
             buildAnnotatedString {
-                append("MPR ")
-                withStyle(SpanStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = DartsColors.Text)) { append(Mpr.format(mpr)) }
+                append("$rateLabel ")
+                withStyle(SpanStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = DartsColors.Text)) { append(rateText) }
             },
             fontSize = 12.sp,
             color = DartsColors.SubText,

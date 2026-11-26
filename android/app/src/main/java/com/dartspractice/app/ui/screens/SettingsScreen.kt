@@ -49,7 +49,7 @@ private const val BACKUP_WARN_DAYS = 7
 fun SettingsScreen(onBack: () -> Unit, onOpenAwards: () -> Unit) {
     ScreenOrientation(allowLandscape = false)
     val vm = appViewModel {
-        SettingsViewModel(it.repository, it.stats, it.backup, it.backupPrefs, it.contentResolver)
+        SettingsViewModel(it.repository, it.stats, it.backup, it.backupPrefs, it.contentResolver, it.menuSelection)
     }
     val count by vm.count.collectAsStateWithLifecycle()
     val lastBackupAt by vm.lastBackupAt.collectAsStateWithLifecycle()
