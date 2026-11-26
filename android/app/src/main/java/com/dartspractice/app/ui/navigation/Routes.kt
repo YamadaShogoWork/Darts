@@ -11,3 +11,4 @@ import kotlinx.serialization.Serializable
 @Serializable data class RecordRoute(val sessionId: Long)
 @Serializable data class ResultRoute(val sessionId: Long = 0L)
 @Serializable object SettingsRoute
+@Serializable object AwardSettingsRoute

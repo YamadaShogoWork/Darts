@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.dartspractice.app.data.AwardPrefs
 import com.dartspractice.app.data.PracticeRepository
 import com.dartspractice.app.data.StatsRepository
 import com.dartspractice.app.data.backup.BackupPrefs
@@ -20,6 +21,7 @@ class DartsApplication : Application() {
     val stats by lazy { StatsRepository(database) }
     val backup by lazy { BackupRepository(database) }
     val backupPrefs by lazy { BackupPrefs(this) }
+    val awardPrefs by lazy { AwardPrefs(this) }
 }
 
 /** DartsApplication を使って ViewModel を作る。 */

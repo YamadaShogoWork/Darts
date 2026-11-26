@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  アプリアイコンの図形: 赤い的と、中心のブルに右上から刺さる白いダーツ(細身リアル)。
+  108x108 のうち、どの形に切り抜かれても欠けない中心の円(半径33)の内側に収めている。
+  的の中心(49,59) = ダーツの先端。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 外側の輪 -->
+    <path
+        android:pathData="M27,59a22,22 0 1,0 44,0a22,22 0 1,0 -44,0"
+        android:strokeColor="#FF5A5F"
+        android:strokeWidth="5" />
+    <!-- 内側の輪 -->
+    <path
+        android:pathData="M36,59a13,13 0 1,0 26,0a13,13 0 1,0 -26,0"
+        android:strokeColor="#FF5A5F"
+        android:strokeWidth="4.5" />
+    <!-- ブル -->
+    <path
+        android:pathData="M43.5,59a5.5,5.5 0 1,0 11,0a5.5,5.5 0 1,0 -11,0"
+        android:fillColor="#FF5A5F" />
+
+    <!--
+      ダーツ: 先端を (0,0) にして右向きに描き、的の中心へ移して45度回す。
+      まず黒い太めの縁を描き、その上に白を重ねて、的と重なるところを分ける。
+    -->
+    <group
+        android:translateX="49"
+        android:translateY="59"
+        android:rotation="-45">
+
+        <!-- 黒い縁 -->
+        <path
+            android:pathData="M0,0 L9,-0.8 L9,0.8 Z
+                M9,-1.5 C12,-2.9 20,-3.1 24,-2.3 L24,2.3 C20,3.1 12,2.9 9,1.5 Z
+                M24,-0.8 L32,-0.8 L32,0.8 L24,0.8 Z
+                M30,-0.8 L35.5,-7.5 L41,-7.5 L41,7.5 L35.5,7.5 L30,0.8 Z"
+            android:fillColor="#0B0B0C"
+            android:strokeColor="#0B0B0C"
+            android:strokeWidth="1.6"
+            android:strokeLineJoin="round" />
+
+        <!-- 針 -->
+        <path
+            android:pathData="M0,0 L9,-0.8 L9,0.8 Z"
+            android:fillColor="#F4F4F5" />
+        <!-- バレル(先すぼみの胴体) -->
+        <path
+            android:pathData="M9,-1.5 C12,-2.9 20,-3.1 24,-2.3 L24,2.3 C20,3.1 12,2.9 9,1.5 Z"
+            android:fillColor="#F4F4F5" />
+        <!-- シャフト -->
+        <path
+            android:pathData="M24,-0.8 L32,-0.8 L32,0.8 L24,0.8 Z"
+            android:fillColor="#F4F4F5" />
+        <!-- フライト(羽根) -->
+        <path
+            android:pathData="M30,-0.8 L35.5,-7.5 L41,-7.5 L41,7.5 L35.5,7.5 L30,0.8 Z"
+            android:fillColor="#F4F4F5" />
+        <!-- バレルの滑り止めの溝 -->
+        <path
+            android:pathData="M14,-2.6 L14,2.6 M16.5,-2.8 L16.5,2.8 M19,-2.8 L19,2.8"
+            android:strokeColor="#0B0B0C"
+            android:strokeWidth="0.7" />
+    </group>
+</vector>

@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -28,6 +29,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,8 +41,10 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
@@ -68,8 +73,9 @@ fun RecordScreen(sessionId: Long, onShowResult: (Long) -> Unit, onBack: () -> Un
     ScreenOrientation(allowLandscape = true)
     KeepScreenOn()
 
-    val vm = appViewModel(key = "record-$sessionId") { RecordViewModel(sessionId, it.repository) }
+    val vm = appViewModel(key = "record-$sessionId") { RecordViewModel(sessionId, it.repository, it.awardPrefs) }
     val ui by vm.ui.collectAsStateWithLifecycle()
+    val award by vm.award.collectAsStateWithLifecycle()
     val rule = ui.rule
     val p = ui.practice
     if (rule == null || p == null) return // 読み込み中
@@ -84,43 +90,60 @@ fun RecordScreen(sessionId: Long, onShowResult: (Long) -> Unit, onBack: () -> Un
         }
     }
 
-    if (landscape) {
-        Row(
-            Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(20.dp),
-        ) {
-            Column(
-                Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+    // ターンごとのアワードの演出を、画面全体の上に重ねる(入力のじゃまはしない)
+    AwardOverlay(award, Modifier.fillMaxSize()) {
+        if (landscape) {
+            Row(
+                Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                header()
-                NumberRail(rule, p, cellHeight = 44)
-                CurrentNumberCard(p, numberSize = 64.sp)
-                TurnRow(p)
+                Column(
+                    Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    header()
+                    NumberRail(rule, p, cellHeight = 50)
+                    CurrentNumberCard(p, numberSize = 64.sp)
+                }
+                // ターンと何投目かは、入力ボタンのすぐ上に置いて常に見えるようにする
+                Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TurnRow(p)
+                    controls(Modifier.weight(1f))
+                    FooterButtons(canUndo = p.throws.isNotEmpty(), onUndo = vm::undo, onBack = onBack)
+                }
             }
-            Column(Modifier.weight(1f).fillMaxHeight().padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                controls(Modifier.weight(1f))
-                FooterButtons(canUndo = p.throws.isNotEmpty(), onUndo = vm::undo, onBack = onBack)
+        } else {
+            BoxWithConstraints(
+                Modifier.fillMaxSize().padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 16.dp),
+            ) {
+                // 入力ボタンは縮めない。画面に入りきらない機種では、大きな数字のほうを小さくする
+                val numberSize = if (maxHeight < PORTRAIT_FULL_HEIGHT) 80.sp else 112.sp
+                Column(Modifier.fillMaxSize()) {
+                    header()
+                    Spacer(Modifier.height(12.dp))
+                    NumberRail(rule, p, cellHeight = 56)
+                    Spacer(Modifier.height(16.dp))
+                    CurrentNumberCard(p, numberSize = numberSize)
+                    Spacer(Modifier.height(12.dp))
+                    TurnRow(p)
+                    Spacer(Modifier.weight(1f).height(12.dp))
+                    controls(Modifier.height(204.dp))
+                    Spacer(Modifier.height(12.dp))
+                    FooterButtons(canUndo = p.throws.isNotEmpty(), onUndo = vm::undo, onBack = onBack)
+                }
             }
-        }
-    } else {
-        Column(
-            Modifier.fillMaxSize().padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 16.dp),
-        ) {
-            header()
-            Spacer(Modifier.height(12.dp))
-            NumberRail(rule, p, cellHeight = 56)
-            Spacer(Modifier.height(16.dp))
-            CurrentNumberCard(p, numberSize = 112.sp)
-            Spacer(Modifier.height(12.dp))
-            TurnRow(p)
-            Spacer(Modifier.weight(1f).height(12.dp))
-            controls(Modifier.height(204.dp))
-            Spacer(Modifier.height(12.dp))
-            FooterButtons(canUndo = p.throws.isNotEmpty(), onUndo = vm::undo, onBack = onBack)
         }
     }
 }
+
+/** 縦画面で大きな数字(112sp)のまま、入力ボタンを縮めずに全部入る高さ。これより低ければ数字を小さくする。 */
+private val PORTRAIT_FULL_HEIGHT = 770.dp
+
+/** 文字の上下の余分な余白をなくす。 */
+private val TightText = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+
+/** 「このナンバーの投げ」の欄の高さ(チップ2行分)。 */
+private val HISTORY_HEIGHT = 66.dp
 
 @Composable
 private fun KeepScreenOn() {
@@ -171,16 +194,27 @@ private fun NumberRail(rule: PracticeRule, p: PracticeState, cellHeight: Int) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                Text(if (t == BULL) "B" else t, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = fg)
+                // 2段の文字は上下の余白をなくして詰める(横画面の低いマスでも切れないように)
+                Text(
+                    if (t == BULL) "B" else t,
+                    fontSize = 16.sp,
+                    lineHeight = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = fg,
+                    style = TightText,
+                )
+                // 今投げているマスは色だけでわかるので、下の段は空にする(ナンバーの位置はそろえる)
                 Text(
                     when {
                         done -> "${darts[t]}本"
-                        current -> "投げ中"
+                        current -> ""
                         else -> "—"
                     },
                     fontSize = 11.sp,
+                    lineHeight = 13.sp,
                     fontWeight = FontWeight.Medium,
                     color = fg,
+                    style = TightText,
                 )
             }
         }
@@ -225,13 +259,18 @@ private fun CurrentNumberCard(p: PracticeState, numberSize: TextUnit) {
                 )
             }
         }
+        // このナンバーの投げ: 高さを2行分に固定し、増えたら自動で一番下(最新)までスクロールする
+        Text("このナンバーの投げ", fontSize = 12.sp, color = DartsColors.SubText, modifier = Modifier.padding(top = 10.dp, bottom = 4.dp))
+        val scroll = rememberScrollState()
+        LaunchedEffect(shown) {
+            snapshotFlow { scroll.maxValue }.collect { scroll.animateScrollTo(it) }
+        }
         FlowRow(
-            Modifier.fillMaxWidth().padding(top = 10.dp).defaultMinSize(minHeight = 30.dp),
+            Modifier.fillMaxWidth().height(HISTORY_HEIGHT).verticalScroll(scroll),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
             itemVerticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("このナンバーの投げ", fontSize = 12.sp, color = DartsColors.SubText, modifier = Modifier.padding(end = 4.dp))
             p.throws.filter { it.target == shown }.forEach { t ->
                 val (bg, fg) = markChipColors(t.rawMarks)
                 Box(

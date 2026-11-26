@@ -34,6 +34,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.dartspractice.app.ui.screens.AwardSettingsScreen
 import com.dartspractice.app.ui.screens.DetailScreen
 import com.dartspractice.app.ui.screens.GraphScreen
 import com.dartspractice.app.ui.screens.HomeScreen
@@ -106,7 +107,13 @@ fun DartsApp() {
                 )
             }
             composable<SettingsRoute> {
-                SettingsScreen(onBack = { nav.popBackStack() })
+                SettingsScreen(
+                    onBack = { nav.popBackStack() },
+                    onOpenAwards = { nav.navigate(AwardSettingsRoute) },
+                )
+            }
+            composable<AwardSettingsRoute> {
+                AwardSettingsScreen(onBack = { nav.popBackStack() })
             }
         }
     }

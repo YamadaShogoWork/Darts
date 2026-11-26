@@ -46,7 +46,7 @@ private const val BACKUP_WARN_DAYS = 7
 
 /** 設定。バックアップの書き出し・読み込み(Storage Access Framework)。開発用の欄は debug ビルドだけに出す。 */
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
+fun SettingsScreen(onBack: () -> Unit, onOpenAwards: () -> Unit) {
     ScreenOrientation(allowLandscape = false)
     val vm = appViewModel {
         SettingsViewModel(it.repository, it.stats, it.backup, it.backupPrefs, it.contentResolver)
@@ -100,6 +100,17 @@ fun SettingsScreen(onBack: () -> Unit) {
                     color = DartsColors.SubText,
                 )
                 message?.let { MessageText(it) }
+            }
+        }
+
+        SectionLabel("アワード")
+        DartsCard(radius = 20.dp, onClick = onOpenAwards) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("アワードの設定", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text("アワードごとの ON/OFF と、演出のお試し", fontSize = 12.sp, color = DartsColors.SubText)
+                }
+                Text("›", fontSize = 18.sp, color = DartsColors.SubText)
             }
         }
 
