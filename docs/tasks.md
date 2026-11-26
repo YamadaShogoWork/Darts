@@ -8,7 +8,7 @@
 | --- | --- | --- | --- |
 | 0-1 | 資料の整理(docs/spec, docs/mockup) | ✅ | |
 | 0-2 | CLAUDE.md の作成 | ✅ | |
-| 0-3 | git init / .gitignore | ✅ | リモートは未設定 |
+| 0-3 | git init / .gitignore | ✅ | リモート: https://github.com/YamadaShogoWork/Darts |
 | 0-4 | Android Studio のインストール(ユーザー作業) | ✅ | SDKは C:\Android\Sdk(platform 37.0) |
 | 0-5 | Pixel 8 の USBデバッグ有効化(ユーザー作業) | 🔄 | 接続は認識。端末で「USBデバッグを許可」が未承認(unauthorized) |
 
